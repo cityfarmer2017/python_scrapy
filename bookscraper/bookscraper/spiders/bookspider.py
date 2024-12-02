@@ -1,4 +1,6 @@
 import scrapy
+import scrapy.http
+import scrapy.http.response
 
 
 class BookspiderSpider(scrapy.Spider):
@@ -6,15 +8,19 @@ class BookspiderSpider(scrapy.Spider):
     allowed_domains = ["books.toscrape.com"]
     start_urls = ["https://books.toscrape.com"]
 
-    def parse(self, response):
+
+    def parse(self, response: scrapy.http.Response):
         books = response.css('article.product_pod')
 
         for book in books:
-            yield {
-                'name' : book.css('h3 a::text').get(),
-                'price' : book.css('.product_pod .price_color::text').get(),
-                'url' : book.css('h3 a').attrib['href'],
-            }
+            relative_url = book.css('h3 a::attr(href)').get()
+
+            if 'catalogue/' in relative_url:
+                book_url = 'https://books.toscrape.com/' + relative_url
+            else:
+                book_url = 'https://books.toscrape.com/catalogue/' + relative_url
+
+            yield response.follow(book_url, callback= self.parse_book_page)
 
         next_page = response.css('li.next a::attr(href)').get()
 
@@ -24,4 +30,23 @@ class BookspiderSpider(scrapy.Spider):
             else:
                 next_page_url = 'https://books.toscrape.com/catalogue/' + next_page
 
-            yield response.follow(next_page_url, callback = self.parse)
+            yield response.follow(next_page_url, callback= self.parse)
+
+
+    def parse_book_page(self, response: scrapy.http.Response):
+        table_rows = response.css("table tr")
+
+        yield {
+            'url' : response.url,
+            'tittle' : response.css('.product_main h1::text').get(),
+            'product_type' : table_rows[1].css('td ::text').get(),
+            'price_excl_tax' : table_rows[2].css('td ::text').get(),
+            'price_incl_tax' : table_rows[3].css('td ::text').get(),
+            'tax' : table_rows[4].css('td ::text').get(),
+            'availability' : table_rows[5].css('td ::text').get(),
+            'mum_reviews' : table_rows[6].css('td ::text').get(),
+            'stars' : response.css('p.star-rating').attrib['class'].split()[1],
+            'category' : response.xpath('//ul[@class="breadcrumb"]/li[@class="active"]/preceding-sibling::li[1]/a/text()').get(),
+            'description' : response.xpath('//div[@id="product_description"]/following-sibling::p/text()').get(),
+            'price' : response.css('.price_color ::text').get(),
+        }
