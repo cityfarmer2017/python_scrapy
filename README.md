@@ -39,3 +39,24 @@ scrapy crawl bookspider -o bookdata.csv
 scrapy crawl bookspider -O bookdata.json
 
 scrapy crawl bookspider -O bookdata.csv
+
+
+// mysql
+
+pip install mysql mysql-connector-python
+
+mysql -h localhost -u root -p
+
+    show databases;
+
+    use books;
+
+    show tables;
+
+    select * from books;
+
+    select tittle,stars from books;
+
+    drop table books;
+
+exit
