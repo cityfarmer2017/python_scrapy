@@ -12,7 +12,7 @@ class BookspiderSpider(scrapy.Spider):
     custom_settings = {
         'FEEDS': {
             'booksdata.json': {'format': 'json', 'overwrite': True},
-            'booksdata.csv': {'format': 'csv', 'overwrite': True}
+            # 'booksdata.csv': {'format': 'csv', 'overwrite': True}
         }
     }
 
